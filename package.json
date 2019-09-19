@@ -1,0 +1,36 @@
+{
+    "name": "xts",
+    "version": "0.0.1",
+    "description": "",
+    "license": "MIT",
+    "author": "scal",
+    "main": "dist/main",
+    "scripts": {
+        "build": "yarn clear; tsc;",
+        "js": "node ./dist/main.js",
+        "ts": "ts-node ./src/main.ts",
+        "compile": "tsc --watch",
+        "start": "yarn webpack-dev-server --config ./webpack.config.js --inline --watch --progress --port 4200",
+        "web": "ng serve",
+        "browser": "browser-sync start --server -w -f ./dist/build.js",
+        "clear": "rm -rf dist",
+        "clear:modules": "rm -rf node_modules",
+        "link": "yarn build && cd dist && yarn link"
+    },
+    "dependencies": {
+        "@angular/common": "^8.2.7",
+        "@angular/compiler": "^8.2.7",
+        "@angular/core": "^8.2.7",
+        "@angular/platform-browser": "^8.2.7",
+        "@angular/platform-browser-dynamic": "^8.2.7",
+        "zone.js": "^0.10.2"
+    },
+    "devDependencies": {
+        "@angular-builders/custom-webpack": "^8.2.0",
+        "@angular-devkit/build-angular": "^0.803.5",
+        "@angular/cli": "^8.3.5",
+        "@angular/compiler-cli": "^8.2.7",
+        "awesome-typescript-loader": "^5.2.1",
+        "write-file-webpack-plugin": "^4.5.1"
+    }
+}
