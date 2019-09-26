@@ -1,0 +1,23 @@
+{
+    "name": "Map",
+    "id": 10,
+    "objects": [
+        {
+            "name": "parent",
+            "geometry": {
+                "position": {
+                    "x": 0,
+                    "y": 0
+                },
+                "scale": {
+                    "x": 0.5,
+                    "y": 1
+                },
+                "rotation": 0
+            },
+            "texture": {
+                "diffuse": "textures/container.png"
+            }
+        }
+    ]
+}
