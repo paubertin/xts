@@ -9,7 +9,23 @@ import { MapLoader } from "./mapLoader";
 import { EVENTS } from "../events/event";
 import { DataBase } from "./offlineProvider";
 import { ShaderLoader } from "./shaderLoader";
+import { Importer } from "./assimp/importer";
+import { File } from "./file";
+import { FileLoader } from "./fileLoader";
+import { ObjLoader } from "./obj/objLoader";
 
+function staticImplements<T>() {
+    return (constructor: T) => {}
+}
+
+export interface IAssetManager {
+
+}
+
+export interface IAssetManagerStatic {
+    onAssetLoaded(asset: IAsset, eventType?: EVENTS): void;
+}
+@staticImplements<IAssetManagerStatic>()
 export class AssetManager {
 
     public static sanitizePath(path: string): string {
@@ -21,9 +37,11 @@ export class AssetManager {
             throw new Error('AssetManager already instanciated');
         }
         AssetManager._instance = new AssetManager();
-        AssetManager._instance._loaders.push(new ImageLoader());
-        AssetManager._instance._loaders.push(new JsonLoader());
-        AssetManager._instance._loaders.push(new ShaderLoader());
+        AssetManager._instance._loaders.push(new ImageLoader(this));
+        AssetManager._instance._loaders.push(new JsonLoader(this));
+        AssetManager._instance._loaders.push(new ShaderLoader(this));
+        AssetManager._instance._loaders.push(new ObjLoader(this));
+        AssetManager._instance._fileLoader = new FileLoader(this);
     }
 
     public static registerLoader(loader: IAssetLoader): void {
@@ -53,6 +71,14 @@ export class AssetManager {
                 return;
             }
         }
+        try {
+            const loader = this._instance._fileLoader;
+            loader.loadAsset(AssetManager.sanitizePath(name), this.instance._database);
+            console.log('asset loaded');
+        }
+        catch (err) {
+            Logger.error(err);
+        }
         Logger.warn(`Unable to load asset with extension ${ext}, there is no loader associated.`);
     }
 
@@ -73,11 +99,16 @@ export class AssetManager {
     */
     private static _instance: AssetManager;
     private _loaders: IAssetLoader[] = [];
+    private _fileLoader!: FileLoader;
     private _assets: std.HashMap<string, IAsset> = new std.HashMap<string, IAsset>();
     private _mapLoader: MapLoader = new MapLoader();
     private _database: DataBase = new DataBase();
 
-    private constructor() {}
+    private _assimp: Importer;
+
+    private constructor() {
+        this._assimp = new Importer();
+    }
 
     private static get instance(): AssetManager {
         if (!AssetManager._instance) {

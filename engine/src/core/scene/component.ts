@@ -1,7 +1,9 @@
-import { Mat, Vec3 } from "../maths";
+import { Mat, Vec3, toRad } from "../maths";
 import { Geometry } from "../geometry";
 import { Material } from "./material";
 import { TimeStep } from "../utils/timestep";
+import { Quaternion } from "../maths/linearAlgebra/quaternion";
+import { float } from "../utils/types";
 
 export abstract class Component {
     protected _type: string;
@@ -16,7 +18,11 @@ export abstract class Component {
 }
 
 export class TransformComponent extends Component {
-    protected _transform!: Mat;
+    protected _transform: Mat = Mat.Identity;
+    protected _position: Vec3 = Vec3.Zeros;
+    protected _rotationQuaternion: Quaternion = new Quaternion();
+    protected _scale: Vec3 = new Vec3(1, 1, 1);
+
 
     constructor();
     constructor(position: Vec3);
@@ -25,20 +31,41 @@ export class TransformComponent extends Component {
         super('transform');
         if (position instanceof Mat)
             this._transform = position;
-        else if (position instanceof Vec3) {
-            this._transform = Mat.Translation(position);
-        }
         else {
-            this._transform = Mat.Identity;
+            if (position instanceof Vec3) {
+                this._position.from(position);
+            }
+            this._computeTransform();
         }
+    }
+
+    public set scale(scale: Vec3) {
+        this._scale.from(scale);
+    }
+
+    public rotate(angle: float, axis: 'X' | 'Y' | 'Z'): void {
+        let rotation: Quaternion;
+        switch (axis) {
+            case 'X': rotation = Quaternion.RotationYawPitchRoll(0, angle, 0); break;
+            case 'Y': rotation = Quaternion.RotationYawPitchRoll(angle, 0, 0); break;
+            case 'Z': rotation = Quaternion.RotationYawPitchRoll(0, 0, angle); break;
+        }
+        this._rotationQuaternion.from(rotation!.multiply(this._rotationQuaternion));
+    }
+
+    public rotateDeg(angle: float, axis: 'X' | 'Y' | 'Z'): void {
+        return this.rotate(toRad(angle), axis);
     }
 
     public get transform(): Mat {
-        return this._transform;
+        return this._computeTransform();
     }
 
-    public update(timestep: TimeStep): void {
-        
+    protected _computeTransform(): Mat {
+        return this._transform.from(Mat.multiply(Mat.Translation(this._position), Mat.multiply(Mat.from(this._rotationQuaternion), Mat.Scale(this._scale))));
+    }
+
+    public onUpdate(timestep: TimeStep): void {
     }
 }
 

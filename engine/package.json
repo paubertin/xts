@@ -24,6 +24,7 @@
     "@angular/platform-browser": "^8.2.7",
     "@angular/platform-browser-dynamic": "^8.2.7",
     "@thi.ng/matrices": "^0.5.8",
+    "buffer": "^5.4.3",
     "ts-shader-loader": "^1.0.6",
     "tstl": "^2.2.3",
     "zone.js": "^0.10.2"

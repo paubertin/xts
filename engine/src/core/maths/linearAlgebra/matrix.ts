@@ -56,9 +56,18 @@ export class Mat {
             m[12] === 0.0 && m[13] === 0.0 && m[14] === 0.0 && m[15] === 1.0;
     }
 
+    public static from(values: ArrayLike<float>): Mat;
+    public static from(mat: Mat): Mat;
+    public static from(quaternion: Quaternion): Mat;
+    public static from(mat: Mat | ArrayLike<float> | Quaternion): Mat {
+        let out = new Mat();
+        return out.from(mat);
+    }
+
     public from(values: ArrayLike<float>): Mat;
     public from(mat: Mat): Mat;
     public from(quaternion: Quaternion): Mat;
+    public from(mat: Mat | ArrayLike<float> | Quaternion): Mat;
     public from(mat: Mat | ArrayLike<float> | Quaternion): Mat {
         if (mat instanceof Mat)
             this.m.set(mat.m);

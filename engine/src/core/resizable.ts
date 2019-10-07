@@ -36,12 +36,13 @@ export abstract class Resizable {
     }
 
     protected _resizeCallback(): void {
+        console.log('on resize from RESIZABLE');
         Resizable.resize();
     }
 
     protected _mutationCallback(): void {
         this._mutationObserver.takeRecords();
-        Resizable.resize();
+        Resizable.resize(true);
     }
 
     protected observe(element: HTMLElement): void {
@@ -51,9 +52,9 @@ export abstract class Resizable {
         this._mutationObserver.observe(element, Resizable.MUTATION_CONFIG);
     }
 
-    protected abstract onResize(): void;
+    protected abstract onResize(cacheSize: boolean): void;
 
-    protected static resize(): void {
-        Resizable.instances.forEach((resizable) => resizable.onResize());
+    protected static resize(cacheSize: boolean = false): void {
+        Resizable.instances.forEach((resizable) => resizable.onResize(cacheSize));
     }
 }

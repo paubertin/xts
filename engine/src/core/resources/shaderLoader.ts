@@ -1,6 +1,5 @@
-import { IAssetLoader } from "./iAssetLoader";
+import { ALoader } from "./iAssetLoader";
 import { Logger } from "../utils/log";
-import { AssetManager } from './assetManager';
 import { IAsset } from "./iAsset";
 import { IOfflineProvider } from "./offlineProvider";
 import { EVENTS } from "../events/event";
@@ -20,13 +19,13 @@ export class ShaderAsset implements IAsset {
     }
 }
 
-export class ShaderLoader implements IAssetLoader {
+export class ShaderLoader extends ALoader {
     public get supportedExtensions(): string[] {
         return ['glsl'];
     }
 
     public loadAsset(name: string, offlineProvider?: IOfflineProvider): void {
-        const url = 'http://localhost:5757/' + name;
+        const url = this._serverUrl + name;
 
         const noOfflineSupport = () => {
             throw new Error('Cannot load shader. No internet connection.');
@@ -49,6 +48,6 @@ export class ShaderLoader implements IAssetLoader {
     private onShaderSourceLoaded(name: string, source: string): void {
         Logger.info(`onShaderLoaded:`, name);
         const asset = new ShaderAsset(name, source);
-        AssetManager.onAssetLoaded(asset, EVENTS.SHADER_LOADED);
+        this._assetManager.onAssetLoaded(asset, EVENTS.SHADER_LOADED);
     }
 }

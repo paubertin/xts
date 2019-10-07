@@ -1,6 +1,5 @@
-import { IAssetLoader } from "./iAssetLoader";
+import { ALoader } from "./iAssetLoader";
 import { Logger } from "../utils/log";
-import { AssetManager } from './assetManager';
 import { IAsset } from "./iAsset";
 
 export class JsonAsset implements IAsset {
@@ -16,7 +15,7 @@ export class JsonAsset implements IAsset {
     }
 }
 
-export class JsonLoader implements IAssetLoader {
+export class JsonLoader extends ALoader {
     public get supportedExtensions(): string[] {
         return ['json'];
     }
@@ -36,7 +35,7 @@ export class JsonLoader implements IAssetLoader {
             }
             else {
                 const asset = new JsonAsset(name, JSON.parse(request.responseText));
-                AssetManager.onAssetLoaded(asset);
+                this._assetManager.onAssetLoaded(asset);
             }
         }
         request.removeEventListener('load', this.onJsonLoaded.bind(this, name, request));

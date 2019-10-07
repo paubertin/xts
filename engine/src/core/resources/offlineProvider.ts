@@ -1,9 +1,13 @@
 import { Nullable } from "../utils/types";
 import { Logger } from "../utils/log";
+import { File } from "./file";
 
 export interface IOfflineProvider {
     open(successCallback: () => void, errorCallback: () => void): void;
     loadImage(url: string, image: HTMLImageElement): void;
+    loadFile(url: string, fileLoaded: (file?: File) => void,
+        progressCallback?: (this: XMLHttpRequestEventTarget, ev: ProgressEvent) => any,
+        errorCallback?: (data?: any) => void, useArrayBuffer?: boolean): void;
     loadShader(url: string, name: string, shaderLoaded: (name: string, source: string) => void): void;
 }
 
@@ -53,6 +57,7 @@ export class DataBase implements IOfflineProvider {
                         try {
                             this._db.createObjectStore('textures', { keyPath: 'textureUrl'});
                             this._db.createObjectStore('shaders', { keyPath: 'shaderUrl'});
+                            this._db.createObjectStore('files', { keyPath: 'fileUrl'});
                         }
                         catch (err) {
                             Logger.error('Error while creating object stores. Exception: ', err.message);
@@ -64,6 +69,137 @@ export class DataBase implements IOfflineProvider {
             else {
                 successCallback();
             }
+        }
+    }
+
+    public loadFile(url: string, fileLoaded: (file?: File) => void,
+        progressCallback?: (this: XMLHttpRequestEventTarget, ev: ProgressEvent) => any, errorCallback?: (data?: any) => void, useArrayBuffer?: boolean): void {
+        const completeUrl = DataBase.GetFullUrlLocation(url);
+
+        const saveAndLoadFile = () => {
+            this._saveFileAsync(completeUrl, fileLoaded, progressCallback, useArrayBuffer, errorCallback);
+        };
+
+        if (!this._mustUpdateResources) {
+            this._loadFileAsync(completeUrl, fileLoaded, saveAndLoadFile);
+        }
+        else {
+            saveAndLoadFile();
+        }
+    }
+
+    private _saveFileAsync(url: string, callback: (file?: File) => void,
+        progressCallback?: (this: XMLHttpRequestEventTarget, ev: ProgressEvent) => any,
+        useArrayBuffer: boolean = true, errorCallback?: (data?: any) => void) {
+        if (this._isSupported) {
+            let targetStore = 'files';
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', url + '?' + Date.now());
+
+            if (useArrayBuffer) {
+                xhr.responseType = 'arraybuffer';
+            }
+
+            if (progressCallback) {
+                xhr.onprogress = progressCallback;
+            }
+
+            xhr.addEventListener('load', () => {
+                if (xhr.status === 200 || (xhr.status < 400 && DataBase.ValidateXHRData(xhr))) {
+                    let file = new File(url, url, !useArrayBuffer ? xhr.responseText : xhr.response);
+
+                    if (!this._hasReachedQuota && this._db) {
+                        let transaction = this._db.transaction([targetStore], 'readwrite');
+
+                        transaction.onabort = (event: Event) => {
+                            try {
+                                let srcElement = <any>(event.srcElement || event.target);
+                                let error = srcElement.error;
+                                if (error && error.name === 'QuotaExceededError') {
+                                    this._hasReachedQuota = true;
+                                }
+                            }
+                            catch (err) {}
+                            callback(file);
+                        };
+
+                        transaction.oncomplete = () => {
+                            callback(file);
+                        };
+
+                        let newFile = {
+                            fileUrl: url,
+                            data: file.content,
+                        };
+
+                        try {
+                            const addRequest = transaction.objectStore(targetStore).put(newFile);
+                            addRequest.onsuccess = () => {};
+                            addRequest.onerror = () => {
+                                Logger.error('Error in DB add file request in xts database.');
+                            };
+                        }
+                        catch (err) {
+                            callback(file);
+                        }
+                    }
+                    else {
+                        callback(file);
+                    }
+                }
+                else {
+                    if (xhr.status >= 400 && errorCallback) {
+                        errorCallback(xhr);
+                    }
+                    else {
+                        callback();
+                    }
+                }
+            }, false);
+
+            xhr.send();
+        }
+        else {
+            Logger.error(`IndexedDB not supported.`);
+            callback();
+        }
+    }
+
+    private _loadFileAsync(url: string, callback: (file?: File) => void, notInDBCallback: () => void): void {
+        if (this._isSupported && this._db) {
+            const targetStore = 'files';
+
+            let file: Nullable<File> = null;
+            const transaction = this._db.transaction([targetStore]);
+
+            transaction.oncomplete = () => {
+                if (file) {
+                    callback(file);
+                }
+                else {
+                    notInDBCallback();
+                }
+            };
+
+            transaction.onabort = () => {
+                notInDBCallback();
+            };
+
+            const getRequest = transaction.objectStore(targetStore).get(url);
+
+            getRequest.onsuccess = (event: Event) => {
+                const result = (<any>(event.target)).result;
+                file = new File(result.fileUrl, result.fileUrl, result.data);
+            };
+            getRequest.onerror = () => {
+                Logger.error(`Error loading file ${url} from DB.`);
+                notInDBCallback();
+            };
+        }
+        else {
+            Logger.error(`IndexedDB not supported.`);
+            callback();
         }
     }
 
@@ -94,11 +230,6 @@ export class DataBase implements IOfflineProvider {
             xhr.open('GET', url);
             xhr.addEventListener('load', () => {
                 if (xhr.status === 200 && this._db) {
-                    shaderLoaded(name, xhr.response);
-                }
-            }, false);
-            xhr.addEventListener('load', () => {
-                if (xhr.status === 200 && this._db) {
                     shaderSource = xhr.response;
                     let transaction = this._db.transaction(['shaders'], 'readwrite');
 
@@ -124,7 +255,7 @@ export class DataBase implements IOfflineProvider {
                         let addRequest = transaction.objectStore('shaders').put(newShader);
                         addRequest.onsuccess = () => {};
                         addRequest.onerror = () => {
-                            shaderLoaded(name, shaderSource);
+                            Logger.error('Error in DB add shader request in xts database.');
                         };
                     }
                     catch (err) {
@@ -339,5 +470,9 @@ export class DataBase implements IOfflineProvider {
         else {
             return url;
         }
+    }
+
+    private static ValidateXHRData(xhr: XMLHttpRequest): boolean {
+        return true;
     }
 }

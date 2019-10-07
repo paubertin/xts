@@ -51,6 +51,59 @@ export class Application implements IApplication {
     constructor() {
     }
 
+    public static printDetails(): void {
+        const plDiv = document.getElementById("pl_details");
+        if (!plDiv) return;
+
+        const write = function(msg: string, elt?: HTMLElement)
+        {
+            if (!elt)
+            {
+                elt = plDiv;
+            }
+
+            if (elt)
+            {
+                plDiv.innerHTML += msg;
+            }
+            else
+            {
+                window.console.log(msg);
+            }
+        };
+
+        write("<h3>xTs Engine Details<\/h3>");
+
+        const info = this._app._engine.systemInfo;
+
+        write(
+            "<ul>" +
+            "<li>Version: " + this._app._engine.version + "<\/li>" +
+            "<\/ul>");
+    
+        var sysDiv = document.getElementById("sys_details");
+        if (sysDiv) {
+            write("<h3>System Details<\/h3>", sysDiv);
+    
+            write(
+                "<ul>" +
+                "<li>CpuDescription: "     + info.cpuDescription + "<\/li>" +
+                "<li>CpuVendor: "          + info.cpuVendor + "<\/li>" +
+                "<li>NumPhysicalCores: "   + info.numPhysicalCores + "<\/li>" +
+                "<li>NumLogicalCores: "    + info.numLogicalCores + "<\/li>" +
+                "<li>RamInMegabytes: "     + info.ramInMegabytes + "<\/li>" +
+                "<li>FrequencyInMegaHz: "  + info.frequencyInMegaHZ + "<\/li>" +
+                "<li>EngineArchitecture: " + info.architecture + "<\/li>" +
+                "<li>OSName: "             + info.osName + "<\/li>" +
+                "<li>OSVersionMajor: "     + info.osVersionMajor + "<\/li>" +
+                "<li>OSVersionMinor: "     + info.osVersionMinor + "<\/li>" +
+                "<li>OSVersionBuild: "     + info.osVersionBuild + "<\/li>" +
+                "<li>UserLocale: "         + info.userLocale + "<\/li>" +
+                "<\/ul>",
+                sysDiv);
+            }
+    }
+
 
     public static init(game?: IGame): void {
         if (Application._app) {

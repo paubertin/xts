@@ -1,7 +1,7 @@
 import { Component, APP_INITIALIZER, OnInit } from '@angular/core';
 import { Application } from 'src/core/application/application';
 
-import { Game } from 'src/learnonpengl/3_Skybox';
+import { Game } from 'src/learnonpengl/4_Movement';
 import { Canvas } from 'src/core/application/canvas';
 import { SpriteGeometry } from 'src/core/scene/spriteGeometry';
 
@@ -24,6 +24,7 @@ export class AppComponent implements OnInit {
 
         let game = new Game();
         Application.init(game);
+        Application.printDetails();
         Application.run();
     }
 }

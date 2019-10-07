@@ -10,17 +10,22 @@ export class Canvas extends Resizable {
     protected _context: WebGLContext;
     protected _clearColor: Color;
 
+    protected _attributes: WebGLContextOptions;
+
     protected _renderer: any;
     protected _controller: any;
 
     protected _size: GLsizei2 = [0, 0];
+    protected _baseSize: GLsizei2;
     protected _frameSize!: GLsizei2;
     protected _frameScale!: GLclampf2;
 
     protected static readonly DEFAULT_CLEAR_COLOR: Color = new Color(0.2, 0.2, 0.2);
     
-    constructor(element: HTMLCanvasElement | string, attributes?: WebGLContextOptions) {
+    public constructor(element: HTMLCanvasElement | string, attributes: WebGLContextOptions = {}) {
         super();
+
+        this._attributes = attributes;
 
         if (element instanceof HTMLCanvasElement) {
             this._element = element;
@@ -42,18 +47,34 @@ export class Canvas extends Resizable {
 
         this.configureSizeAndScale();
 
+        this._baseSize = this._size;
+
         this._clearColor = Canvas.DEFAULT_CLEAR_COLOR;
     }
 
-    get context(): WebGLContext {
+    public get size(): GLsizei2 {
+        return this._size;
+    }
+
+    public get context(): WebGLContext {
         return this._context;
     }
 
-    get frameScale(): GLclampf2 {
+    public get frameScale(): GLclampf2 {
         return this._frameScale;
     }
 
-    set frameScale(frameScale: GLclampf2) {
+    public requestFullscreen(): Promise<void> {
+        console.log('request full screen');
+        return this._element.requestFullscreen();
+    }
+
+    public resetSize() {
+        this._element.width = this._baseSize[0];
+        this._element.height = this._baseSize[1];
+    }
+
+    public set frameScale(frameScale: GLclampf2) {
         if (!isFinite(frameScale[0]) || !isFinite(frameScale[1])) return;
 
         let scale = Vec2.clamp(frameScale, 0.0, 1.0);
@@ -74,26 +95,33 @@ export class Canvas extends Resizable {
     }
 
     protected retrieveSize(): void {
+        if (this._attributes.fullscreen) {
+            this._size[0] = window.innerWidth;
+            this._size[1] = window.innerHeight;
+            return;
+        }
         const size = Resizable.elementSize(this._element);
         if (!size) {
             this._size = [0, 0];
             return;
         }
+        if (size[0] === this._size[0] && size[1] === this._size[1]) return;
         this._size = [size[0], size[1]];
         // TODO
         // dispatch size event
     }
 
-    protected onResize(): void {
-        // TODO
-        Logger.log('on resize from Canvas');
+    protected onResize(cacheSize: boolean = false): void {
+        if (cacheSize) {
+            this._baseSize = this._size;
+        }
 
         this.retrieveSize();
 
         this._element.width = this._size[0];
         this._element.height = this._size[1];
 
-        Logger.log('size', this._size);
+        Logger.log('size', this._baseSize, this._size);
 
         if (this._renderer) this._controller.block();
 
@@ -103,6 +131,8 @@ export class Canvas extends Resizable {
             this._controller.unblock();
             this._renderer.swap();
         }
+
+        this._context.gl.viewport(0, 0, this._size[0], this._size[1]);
     }
 
     protected configureSizeAndScale(): void {

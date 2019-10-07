@@ -2,9 +2,13 @@
     "LOGLEVEL": "DEBUG",
     "LOGBUFFER": false,
     "window": {
-        "fullscreen": true,
-	"width": 1620,
-	"height": 960,
+        "fullscreen": false,
+        "element": "xts",
+        "width": 1200,
+        "height": 800,
         "color": [0.9, 0.9, 0.9, 1.0]
+    },
+    "server": {
+        "url": "http://localhost:5757/"
     }
 }

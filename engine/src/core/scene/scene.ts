@@ -185,7 +185,8 @@ export class Scene implements IScene {
     }
 
     public onUpdate(step: TimeStep): void {
-        this._renderables.forEach((renderable) => renderable.onUpdate(step));
+        this._rootNode.onUpdate(step);
+        // this._renderables.forEach((renderable) => renderable.onUpdate(step));
     }
 
     public onRender(): void {

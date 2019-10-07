@@ -3,7 +3,6 @@ import { TimeStep } from "src/core/utils/timestep";
 import { Logger } from "src/core/utils/log";
 import { ShaderManager } from "src/core/gl/shaders/shaderManager";
 
-import {default as shader} from './shader.glsl';
 import { Shader } from "src/core/gl/shaders/shader";
 import { gl } from "src/core/gl";
 import { setupConsole } from "../utils";
@@ -24,7 +23,7 @@ export class Game extends AGame {
 
         // gl.disable(gl.CULL_FACE);
 
-        this.shader = ShaderManager.load(shader, 'shader_test');
+        this.shader = ShaderManager.load('assets/shaders/shader.glsl');
 
         let vertices = [
             0.5,    0.5,    0.0,    // top right

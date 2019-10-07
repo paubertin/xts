@@ -199,7 +199,7 @@ export class Texture2D extends Texture {
         //     this._height, 0, this._parameters.format, this._parameters.type, asset.data);
 
         // flip Y
-        // gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
         
         gl.texImage2D(glTarget, 0, TextureFormatToGL(gl, this._parameters.format),
             TextureFormatToGL(gl, this._parameters.format), this._parameters.type!, asset.data);

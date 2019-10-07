@@ -100,8 +100,8 @@ export class Game extends AGame {
 
         // gl.disable(gl.CULL_FACE);
 
-        this.shader = ShaderManager.load(shader, 'shader_test');
-        this.skyBoxShader = ShaderManager.load(skyBoxShader, 'skybox');
+        this.shader = ShaderManager.load('assets/shaders/shader.glsl');
+        this.skyBoxShader = ShaderManager.load('assets/shaders/skybox.glsl');
 
         this.VAO = gl.createVertexArray()!;
         this.VBO = gl.createBuffer()!;

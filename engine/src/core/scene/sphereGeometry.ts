@@ -23,38 +23,59 @@ export class SphereGeometry extends Geometry {
         let positions = [];
         let uvs = [];
         let normals = [];
-        for (let y = 0; y <= this._ySegments; ++y) {
-            for (let x = 0; x <= this._xSegments; ++x) {
-                const xSegment = x / this._xSegments;
-                const ySegment = y / this._ySegments;
-                const xPos = Math.cos(xSegment * 2 * PI) * Math.sin(ySegment * PI);
-                const yPos = Math.cos(ySegment * PI);
-                const zPos = Math.sin(xSegment * 2 * PI) * Math.sin(ySegment * PI);
+        let yRad = PI;
+        let xRad = 2 * PI;
+        let yInc = PI / this._ySegments;
+        let xInc = PI * 2 / this._xSegments;
+        for (let x = 0; x <= this._xSegments; ++x) {
+            yRad = PI;
+            for (let y = 0; y <= this._ySegments; ++y) {
+                const xPos = Math.sin(yRad) * Math.cos(xRad);
+                const yPos = Math.cos(yRad);
+                const zPos = Math.sin(yRad) * Math.sin(xRad);
 
                 positions.push(xPos, yPos, zPos);
-                uvs.push(xSegment, ySegment);
-                normals.push(xPos, yPos, zPos);
+                uvs.push(x / this._xSegments, y / this._ySegments);
+
+                const mag = 1 / Math.sqrt(xPos * xPos + yPos * yPos + zPos * zPos);
+                normals.push(xPos * mag, yPos * mag, zPos * mag);
+
+                yRad -= yInc;
             }
+            xRad -= xInc;
         }
 
         let indices = [];
-        let oddRow: boolean = false;
-        for (let y = 0; y < this._ySegments; ++y) {
-            if (!oddRow) {
-                for (let x = 0; x <= this._xSegments; ++x) {
-                    indices.push(y * (this._xSegments + 1) + x);
-                    indices.push((y + 1) * (this._xSegments + 1) + x);
-                }
-            }
-            else {
-                for (let x = this._xSegments; x >= 0; --x) {
-                    indices.push((y + 1) * (this._xSegments + 1) + x);
-                    indices.push(y * (this._xSegments + 1) + x);
-                }
-            }
-            oddRow = !oddRow;
-        }
+        // let oddRow: boolean = false;
+        // for (let y = 0; y < this._ySegments; ++y) {
+        //     if (!oddRow) {
+        //         for (let x = 0; x <= this._xSegments; ++x) {
+        //             indices.push(y * (this._xSegments + 1) + x);
+        //             indices.push((y + 1) * (this._xSegments + 1) + x);
+        //         }
+        //     }
+        //     else {
+        //         for (let x = this._xSegments; x >= 0; --x) {
+        //             indices.push((y + 1) * (this._xSegments + 1) + x);
+        //             indices.push(y * (this._xSegments + 1) + x);
+        //         }
+        //     }
+        //     oddRow = !oddRow;
+        // }
         const idxCount = indices.length;
+
+        const iLen = (this._xSegments) * (this._ySegments + 1);
+        for(let i=0; i < iLen; ++i) {
+            let xp = Math.floor(i / (this._ySegments + 1)); //Current longitude
+            let yp = i % (this._ySegments + 1);             //Current latitude
+
+            //Column index of row R and R+1
+            indices.push(xp * (this._ySegments + 1) + yp, (xp+1) * (this._ySegments + 1) + yp);
+
+            //Create Degenerate Triangle, Last AND first index of the R+1 (next row that becomes the top row )
+            if(yp === this._ySegments && i < iLen-1)
+                indices.push( (xp + 1) * (this._ySegments + 1) + yp, (xp + 1) * (this._ySegments + 1));
+        }
 
         const gl = this.context.gl;
         const usage = gl.STATIC_DRAW;

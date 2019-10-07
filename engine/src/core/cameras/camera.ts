@@ -153,7 +153,7 @@ export class Camera extends SceneNode implements IViewPortOwnerLike {
             this._cache.renderHeight = engine.getRenderHeight();
             this._cache.renderWidth = engine.getRenderWidth();
         }
-        this._projectionMatrix.print();
+        // this._projectionMatrix.print();
         return this._projectionMatrix;
     }
 

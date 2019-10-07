@@ -29,6 +29,38 @@ interface IEngineOptions {
     window: Partial<IWindowProperties>;
 }
 
+interface SystemInfoDisplayMode
+{
+    width: number;
+    height: number;
+    bitsPerPixel: number;
+    refreshHz: number;
+}
+
+export interface SystemInfo
+{
+    architecture      : string;
+    cpuDescription    : string;
+    cpuVendor         : string;
+    numPhysicalCores  : number;
+    numLogicalCores   : number;
+    ramInMegabytes    : number;
+    frequencyInMegaHZ : number;
+
+    osName            : string;
+    osVersionMajor    : number;
+    osVersionMinor    : number;
+    osVersionBuild    : number;
+
+    platformProfile   : string;
+
+    displayModes      : SystemInfoDisplayMode[];
+    userLocale        : string;
+
+    native?           : boolean;
+    plugin?           : boolean;
+}
+
 export interface IEngine {
     readonly timer: Timer;
     readonly window: IWindow;
@@ -47,6 +79,10 @@ export class Engine implements IEngine {
     public timer: Timer = new Timer(false);
     private _loopParams!: LoopParameters;
 
+    private _systemInfo!: SystemInfo;
+
+    private _version: string = '0.0.1';
+
     private _window!: Window;
 
     constructor(engineOptions: Partial<IEngineOptions> = {}) {
@@ -55,6 +91,218 @@ export class Engine implements IEngine {
 
     public get window(): Window {
         return this._window;
+    }
+
+    public get systemInfo() {
+        return this._systemInfo;
+    }
+
+    public get version(): string {
+        return this._version;
+    }
+
+    private _getSystemInfo(): void {
+        let systemInfo : SystemInfo = {
+            architecture: '',
+            cpuDescription: '',
+            cpuVendor: '',
+            numPhysicalCores: (navigator.hardwareConcurrency || 1),
+            numLogicalCores: (navigator.hardwareConcurrency || 1),
+            ramInMegabytes: ((<any>navigator).deviceMemory || ''),
+            frequencyInMegaHZ: 0,
+            osVersionMajor: 0,
+            osVersionMinor: 0,
+            osVersionBuild: 0,
+            osName: navigator.platform,
+            platformProfile: "desktop",
+            displayModes: [],
+            userLocale: (navigator.language).replace('-', '_')
+        };
+
+        function looksLikeNetbook(): boolean
+        {
+            var minScreenDim = Math.min(window.screen.height, window.screen.width);
+            return minScreenDim < 900;
+        }
+
+        const userAgent = navigator.userAgent;
+        let osIndex = userAgent.indexOf('Windows');
+        if (osIndex !== -1)
+        {
+            systemInfo.osName = 'Windows';
+            if (navigator.platform === 'Win64')
+            {
+                systemInfo.architecture = 'x86_64';
+            }
+            else if (navigator.platform === 'Win32')
+            {
+                systemInfo.architecture = 'x86';
+            }
+            osIndex += 7;
+            if (userAgent.slice(osIndex, (osIndex + 4)) === ' NT ')
+            {
+                osIndex += 4;
+                systemInfo.osVersionMajor = parseInt(userAgent.slice(osIndex, (osIndex + 1)), 10);
+                systemInfo.osVersionMinor = parseInt(userAgent.slice((osIndex + 2), (osIndex + 4)), 10);
+            }
+            if (looksLikeNetbook())
+            {
+                systemInfo.platformProfile = "tablet";
+                Logger.debug("Setting platformProfile to 'tablet'");
+            }
+        }
+        else
+        {
+            osIndex = userAgent.indexOf('Mac OS X');
+            if (osIndex !== -1)
+            {
+                systemInfo.osName = 'Darwin';
+                if (navigator.platform.indexOf('Intel') !== -1)
+                {
+                    systemInfo.architecture = 'x86';
+                }
+                osIndex += 9;
+                systemInfo.osVersionMajor = parseInt(userAgent.slice(osIndex, (osIndex + 2)), 10);
+                systemInfo.osVersionMinor = parseInt(userAgent.slice((osIndex + 3), (osIndex + 4)), 10);
+                systemInfo.osVersionBuild = (parseInt(userAgent.slice((osIndex + 5), (osIndex + 6)), 10) || 0);
+            }
+            else
+            {
+                osIndex = userAgent.indexOf('Tizen');
+                if (osIndex !== -1)
+                {
+                    systemInfo.osName = 'Tizen';
+                    if (navigator.platform.indexOf('arm'))
+                    {
+                        systemInfo.architecture = 'arm';
+                    }
+                    if (-1 !== userAgent.indexOf('Mobile'))
+                    {
+                        systemInfo.platformProfile = "smartphone";
+                    }
+                    else
+                    {
+                        systemInfo.platformProfile = "tablet";
+                    }
+                }
+                else
+                {
+                    osIndex = userAgent.indexOf('fireos');
+                    if (osIndex !== -1)
+                    {
+                        systemInfo.osName = 'Fire OS';
+                        if (navigator.platform.indexOf('arm'))
+                        {
+                            systemInfo.architecture = 'arm';
+                        }
+
+                        if (-1 !== userAgent.indexOf('Kindle Fire') ||
+                            -1 !== userAgent.indexOf('KFOT') ||
+                            -1 !== userAgent.indexOf('KFTT') ||
+                            -1 !== userAgent.indexOf('KFJWI') ||
+                            -1 !== userAgent.indexOf('KFJWA') ||
+                            -1 !== userAgent.indexOf('KFSOWI') ||
+                            -1 !== userAgent.indexOf('KFTHWI') ||
+                            -1 !== userAgent.indexOf('KFTHWA') ||
+                            -1 !== userAgent.indexOf('KFAPWI') ||
+                            -1 !== userAgent.indexOf('KFAPWA'))
+                        {
+                            systemInfo.platformProfile = "tablet";
+                        }
+                        else if (-1 !== userAgent.indexOf('Fire Phone'))
+                        {
+                            // TODO: update when user agent device name is known
+                            systemInfo.platformProfile = "smartphone";
+                        }
+                        else
+                        {
+                            // assume something else, most likely Fire TV
+                        }
+                    }
+                    else
+                    {
+                        osIndex = userAgent.indexOf('Linux');
+                        if (osIndex !== -1)
+                        {
+                            systemInfo.osName = 'Linux';
+                            if (navigator.platform.indexOf('64') !== -1)
+                            {
+                                systemInfo.architecture = 'x86_64';
+                            }
+                            else if (navigator.platform.indexOf('x86') !== -1)
+                            {
+                                systemInfo.architecture = 'x86';
+                            }
+                            if (looksLikeNetbook())
+                            {
+                                systemInfo.platformProfile = "tablet";
+                                Logger.debug("Setting platformProfile to 'tablet'");
+                            }
+                        }
+                        else
+                        {
+                            osIndex = userAgent.indexOf('Android');
+                            if (-1 !== osIndex)
+                            {
+                                systemInfo.osName = 'Android';
+                                if (navigator.platform.indexOf('arm'))
+                                {
+                                    systemInfo.architecture = 'arm';
+                                }
+                                else if (navigator.platform.indexOf('x86'))
+                                {
+                                    systemInfo.architecture = 'x86';
+                                }
+                                if (-1 !== userAgent.indexOf('Mobile'))
+                                {
+                                    systemInfo.platformProfile = "smartphone";
+                                }
+                                else
+                                {
+                                    systemInfo.platformProfile = "tablet";
+                                }
+                            }
+                            else
+                            {
+                                if (-1 !== userAgent.indexOf('CrOS'))
+                                {
+                                    systemInfo.osName = 'Chrome OS';
+                                    if (navigator.platform.indexOf('arm'))
+                                    {
+                                        systemInfo.architecture = 'arm';
+                                    }
+                                    else if (navigator.platform.indexOf('x86'))
+                                    {
+                                        systemInfo.architecture = 'x86';
+                                    }
+                                    if (systemInfo.architecture === 'arm' ||
+                                        looksLikeNetbook())
+                                    {
+                                        systemInfo.platformProfile = "tablet";
+                                        Logger.debug("Setting platformProfile to 'tablet'");
+                                    }
+                                }
+                                else if (-1 !== userAgent.indexOf("iPhone") ||
+                                         -1 !== userAgent.indexOf("iPod"))
+                                {
+                                    systemInfo.osName = 'iOS';
+                                    systemInfo.architecture = 'arm';
+                                    systemInfo.platformProfile = 'smartphone';
+                                }
+                                else if (-1 !== userAgent.indexOf("iPad"))
+                                {
+                                    systemInfo.osName = 'iOS';
+                                    systemInfo.architecture = 'arm';
+                                    systemInfo.platformProfile = 'tablet';
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        this._systemInfo = systemInfo;
     }
 
     public get context(): WebGLContext {
@@ -100,6 +348,8 @@ export class Engine implements IEngine {
         EventManager.init();
         ShaderManager.init(this._context);
         TextureManager.init(this._context);
+
+        this._getSystemInfo();
     }
 
     private _loop(): void {

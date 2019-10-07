@@ -38,6 +38,7 @@ class CubeMaterial extends Material {
 
     public bind(): void {
         this.shader.bind();
+        this.shader.setUniform1i('texture0', 0);
         this._texture.bind();
     }
 
@@ -48,7 +49,6 @@ class CubeMaterial extends Material {
 
     public onEvent(event: Event): void {
         if (event.code ===  EVENTS.SHADER_LOADED + this._shader.name) {
-            this.shader.setUniform1i('texture0', 0);
         }
     }
 }
@@ -98,14 +98,14 @@ export class Game extends AGame {
 
         this.setSkyBox();
 
-        this.camera.setPosition(new Vec3(0, 0, 10));
+        this.camera.setPosition(new Vec3(17, 9, 23));
         this.camera.attachControl();
         this.camera.storeState();
 
         this.context.gl.enable(this.context.gl.DEPTH_TEST);
 
         let shader = ShaderManager.load('assets/shaders/cube.glsl');
-        let texture0 = TextureManager.get('assets/textures/awesomeface.png');
+        let texture0 = TextureManager.get('assets/textures/wall.jpg');
         let texture1 = TextureManager.get('assets/textures/wood_container.jpg');
 
         let cubeComponent = new GeometryComponent();

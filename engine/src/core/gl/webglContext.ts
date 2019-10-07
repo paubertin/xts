@@ -6,6 +6,7 @@ import { ID } from "./glObject";
 
 export interface WebGLContextOptions extends WebGLContextAttributes {
     debug?: bool;
+    fullscreen?: bool;
 }
 
 export class WebGLContext {

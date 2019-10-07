@@ -77,7 +77,7 @@ export class SkyBox extends SceneNode {
 
         const oldCullFaceMode = gl.getParameter(gl.CULL_FACE_MODE);
 
-        // gl.cullFace(gl.FRONT);
+        gl.cullFace(gl.FRONT);
 
         gl.depthMask(false);
 

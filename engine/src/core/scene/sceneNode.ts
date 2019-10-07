@@ -1,8 +1,9 @@
 import { Component, GeometryComponent, TransformComponent } from "./component";
 import { IScene } from "./scene";
 import { IEngine } from "../application/engine";
-import { Mat } from "../maths";
-import { Nullable } from "../utils/types";
+import { Mat, toRad } from "../maths";
+import { Nullable, float } from "../utils/types";
+import { TimeStep } from "../utils/timestep";
 
 export interface ISceneNode {
     onRender(): void;
@@ -162,6 +163,24 @@ export class SceneNode implements ISceneNode {
         return this._worldMatrix;
     }
 
+    public rotateDeg(angle: float, axis: 'X' | 'Y' | 'Z'): void {
+        const transformComponent = this.getComponents('transform');
+        // assert length <= 1
+        if (transformComponent.length) {
+            let transform = <TransformComponent>(transformComponent[0]);
+            transform.rotate(toRad(angle), axis);
+        }
+    }
+
+    public rotate(angle: float, axis: 'X' | 'Y' | 'Z'): void {
+        const transformComponent = this.getComponents('transform');
+        // assert length <= 1
+        if (transformComponent.length) {
+            let transform = <TransformComponent>(transformComponent[0]);
+            transform.rotate(angle, axis);
+        }
+    }
+
     public getWorldMatrix(): Mat {
         this.computeWorldMatrix();
         return this._worldMatrix;
@@ -191,5 +210,16 @@ export class SceneNode implements ISceneNode {
         });
 
         this._children.forEach((child) => child.onRender());
+    }
+
+    public onUpdate(step: TimeStep): void {
+        const transformComponent = this.getComponents('transform');
+        // assert length <= 1
+        if (transformComponent.length) {
+            let transform = <TransformComponent>(transformComponent[0]);
+            transform.onUpdate(step);
+        }
+
+        this._children.forEach((child) => child.onUpdate(step));
     }
 }

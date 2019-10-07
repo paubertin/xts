@@ -28,7 +28,7 @@ const CONFIG = {
                     use: 'ts-shader-loader'
                 },
                 {
-                    test: /\.(png|jpg|gif)$/i,
+                    test: /\.(png|jpg|gif|ico)$/i,
                     use: [
                         {
                             loader: 'url-loader',

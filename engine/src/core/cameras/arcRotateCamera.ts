@@ -5,6 +5,7 @@ import { SceneNode } from "../scene/sceneNode";
 import { IScene } from "../scene/scene";
 import { timingSafeEqual } from "crypto";
 import { ArcRotateCameraInputManager } from "./arcRotateCameraInputManager";
+import { Logger } from "../utils/log";
 
 SceneNode.AddConstructor('ArcRotateCamera', (name, scene) => {
     return () => new ArcRotateCamera(name, 0, 0, 1.0, Vec3.Zeros, scene);

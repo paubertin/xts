@@ -103,9 +103,12 @@ export class Renderer {
         Logger.info('  glsl version:  ', gl.getParameter(gl.SHADING_LANGUAGE_VERSION));
 
         gl.clearColor(...clearColor.toArray());
-        // gl.enable(gl.CULL_FACE);
-        // gl.frontFace(gl.CCW);
-        // gl.cullFace(gl.BACK);
+        gl.enable(gl.CULL_FACE);
+        gl.frontFace(gl.CCW);
+        gl.cullFace(gl.BACK);
+
+        gl.depthFunc(gl.LEQUAL);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     }
 
     private clear(buffer: GLenum): void {

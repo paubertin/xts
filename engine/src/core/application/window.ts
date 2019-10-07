@@ -7,7 +7,7 @@ import { Nullable } from '../utils/types';
 import { IEngine } from './engine';
 import { TimeStep } from '../utils/timestep';
 import { Observable } from '../utils/observable';
-import { KeyBoardInfo } from '../events/keyboardEvent';
+import { KeyBoardInfo, KeyBoardEventType } from '../events/keyboardEvent';
 import { ObservableInputManager } from '../input/observableInputManager';
 import { PointerInfo } from '../events/pointerEvent';
 import { Canvas } from './canvas';
@@ -58,6 +58,8 @@ export class Window implements IWindow {
     private _title: string;
     private _eventCallback: Nullable<(event: InputEvent) => void> = null;
 
+    private _isFullscreen: boolean = false;
+
     private _keyBoardObservable: Observable<KeyBoardInfo> = new Observable<KeyBoardInfo>();
     private _pointerObservable: Observable<PointerInfo> = new Observable<PointerInfo>();
 
@@ -71,6 +73,18 @@ export class Window implements IWindow {
             this._canvasElement = <HTMLCanvasElement>document.getElementById(this._properties.element);
             if (!this._canvasElement) {
                 throw new Error(`Cannot find a canvas element named: ${this._properties.element}`);
+            }
+            if (this._properties.width && !this._properties.fullscreen) {
+                this._canvasElement.width = this._properties.width;
+            }
+            else {
+                this._canvasElement.width = window.innerWidth;
+            }
+            if (this._properties.height && !this._properties.fullscreen) {
+                this._canvasElement.height = this._properties.height;
+            }
+            else {
+                this._canvasElement.height = window.innerHeight;
             }
         }
         else {
@@ -158,7 +172,7 @@ export class Window implements IWindow {
 
     private init(): void {
         // GLUtils.initialize(this);
-        this._canvas = new Canvas(this._canvasElement);
+        this._canvas = new Canvas(this._canvasElement, {fullscreen: this._properties.fullscreen});
 
         Renderer.init(this._canvas.context, this._properties.color);
 
@@ -166,6 +180,40 @@ export class Window implements IWindow {
         InputManager.attach(this);
 
         this._inputManager.attachControl();
+
+        let anyDoc = document as any;
+
+        // Fullscreen
+        const _onFullscreenChange = () => {
+
+            if (anyDoc.fullscreen !== undefined) {
+                this._isFullscreen = anyDoc.fullscreen;
+            } else if (anyDoc.mozFullScreen !== undefined) {
+                this._isFullscreen = anyDoc.mozFullScreen;
+            } else if (anyDoc.webkitIsFullScreen !== undefined) {
+                this._isFullscreen = anyDoc.webkitIsFullScreen;
+            } else if (anyDoc.msIsFullScreen !== undefined) {
+                this._isFullscreen = anyDoc.msIsFullScreen;
+            }
+
+            console.log('_onFullscreenChange, isFullScreen ?', this._isFullscreen);
+            if (!this._isFullscreen) {
+                this._canvas.resetSize();
+            }
+        };
+
+        document.addEventListener("fullscreenchange", _onFullscreenChange, false);
+        document.addEventListener("mozfullscreenchange", _onFullscreenChange, false);
+        document.addEventListener("webkitfullscreenchange", _onFullscreenChange, false);
+        document.addEventListener("msfullscreenchange", _onFullscreenChange, false);
+        
+        this._keyBoardObservable.add((eventData: KeyBoardInfo) => {
+            if (eventData.event.keyCode === 122 && eventData.type === KeyBoardEventType.KEYDOWN) {
+                eventData.event.preventDefault();
+                eventData.event.stopPropagation();
+                return this._canvas.requestFullscreen();
+            }
+        });
 
         /*
         this.addEventListener('keydown', InputManager.keyboardCallback);
@@ -182,6 +230,7 @@ export class Window implements IWindow {
         this._canvas.addEventListener('wheel', InputManager.mouseCallback);
 
         */
+       /*
         this.addEventListener('resize', (event: UIEvent) => {
             if (this._properties.fullscreen) {
                 this._properties.width = window.innerWidth;
@@ -191,6 +240,7 @@ export class Window implements IWindow {
                 this._canvas.context.gl.viewport(0, 0, this.width, this.height);
             }
         });
+        */
 
     }
 

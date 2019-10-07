@@ -1,6 +1,5 @@
-import { IAssetLoader } from "./iAssetLoader";
+import { IAssetLoader, ALoader } from "./iAssetLoader";
 import { Logger } from "../utils/log";
-import { AssetManager } from './assetManager';
 import { IAsset } from "./iAsset";
 import { getExtension } from "../utils";
 import { TargaProcessor } from "./targa";
@@ -29,7 +28,7 @@ export class ImageAsset implements IAsset {
     }
 }
 
-export class ImageLoader implements IAssetLoader {
+export class ImageLoader extends ALoader {
     public get supportedExtensions(): string[] {
         return ['png', 'jpg', 'jpeg', 'gif', 'tga'];
     }
@@ -72,7 +71,7 @@ export class ImageLoader implements IAssetLoader {
                 image.addEventListener('load', loadHandler);
                 image.addEventListener('error', errorHandler);
 
-                const url = 'http://localhost:5757/' + name;
+                const url = this._serverUrl + name;
 
                 const noOfflineSupport = () => {
                     image.src = url;
@@ -109,7 +108,7 @@ export class ImageLoader implements IAssetLoader {
     private onImageLoaded(name: string, image: HTMLImageElement): void {
         Logger.info(`onImageLoaded:`, name);
         const asset = new ImageAsset(name, image);
-        AssetManager.onAssetLoaded(asset);
+        this._assetManager.onAssetLoaded(asset);
     }
 }
 

@@ -7,11 +7,22 @@ export class Quaternion {
         public w: float = 1.0) {
     }
 
-    public from(q: Quaternion): void {
-        this.x = q.x;
-        this.y = q.y;
-        this.z = q.z;
-        this.w = q.w;
+    public from(x: float, y: float, z: float, w: float): Quaternion;
+    public from(q: Quaternion): Quaternion;
+    public from(q: Quaternion | float, y?: float, z?: float, w?: float): Quaternion {
+        if (q instanceof Quaternion) {
+            this.x = q.x;
+            this.y = q.y;
+            this.z = q.z;
+            this.w = q.w;
+        }
+        else {
+            this.x = q;
+            this.y = y!;
+            this.z = z!;
+            this.w = w!;
+        }
+        return this;
     }
 
     public clone(): Quaternion {
@@ -20,6 +31,19 @@ export class Quaternion {
 
     public equals(q: Quaternion): boolean {
         return this.x === q.x && this.y === q.y && this.z === q.z && this.w === q.w;
+    }
+
+    public static multiply(q1: Quaternion, q2: Quaternion): Quaternion {
+        let q = q1.clone();
+        return q.multiply(q2);
+    }
+
+    public multiply(q: Quaternion): Quaternion {
+        const x = this.x * q.w + this.y * q.z - this.z * q.y + this.w * q.x;
+        const y = -this.x * q.z + this.y * q.w + this.z * q.x + this.w * q.y;
+        const z = this.x * q.y - this.y * q.x + this.z * q.w + this.w * q.z;
+        const w = -this.x * q.x - this.y * q.y - this.z * q.z + this.w * q.w;
+        return this.from(x, y, z, w);
     }
 
     public static RotationYawPitchRoll(yaw: float, pitch: float, roll: float, out?: Quaternion): Quaternion {
